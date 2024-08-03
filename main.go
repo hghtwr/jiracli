@@ -9,6 +9,7 @@ import (
 	"github.com/hghtwr/jiracli/navigation"
 	"github.com/hghtwr/jiracli/notifications"
 	"github.com/hghtwr/jiracli/views/assignedIssues"
+	"github.com/hghtwr/jiracli/views/changeAssignee"
 	"github.com/hghtwr/jiracli/views/issueDetailView"
 )
 
@@ -38,6 +39,7 @@ func initialModel() MainModel {
 		models: []navigation.ScreenModel{ // This makes update/view much more easier as we can refer to the index of the array from navigation iota. But order needs to be the same as navigation.ScreenId constant!
 			assignedIssues.CreateInitModel(),
 			issueDetailView.CreateInitModel(),
+			changeAssignee.CreateInitModel(),
 		},
 	}
 

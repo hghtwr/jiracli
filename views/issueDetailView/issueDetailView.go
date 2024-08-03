@@ -222,6 +222,10 @@ func (m IssueDetailViewModel) Update(msg tea.Msg) (navigation.ScreenModel, tea.C
 			if m.selectedTab > 0 {
 				m.selectedTab--
 			}
+		case "a":
+			m.NavTo = navigation.ChangeAssigneeView
+			m.Context = navigation.Context{IssueId: m.issue.Key}
+			return m, navigation.RefreshView()
 		}
 	}
 	switch msg := msg.(type) {
@@ -265,7 +269,7 @@ func (m IssueDetailViewModel) SetNavTo(navTo navigation.ScreenId) navigation.Scr
 }
 
 func (m IssueDetailViewModel) GetContext() navigation.Context {
-	return navigation.Context{}
+	return m.Context
 }
 func (m IssueDetailViewModel) SetContext(context navigation.Context) navigation.ScreenModel {
 	m.Context = context

@@ -35,9 +35,10 @@ type ScreenModel interface {
 const (
 	AssignedIssueView ScreenId = iota
 	IssueDetailView
-	CommentView
 	ChangeAssigneeView
+	CommentView
 	ChangePriorityView
 	ChangeStatusView
 	SettingsView
+
 )
