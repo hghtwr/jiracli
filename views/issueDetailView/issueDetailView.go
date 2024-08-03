@@ -52,105 +52,70 @@ func (m IssueDetailViewModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m IssueDetailViewModel) View() string {
-
-	commentBoxTabs := make([]string, 0)
-	commentBoxTabStyle := lipgloss.NewStyle().BorderTop(true).BorderStyle(lipgloss.ThickBorder()).Background(lipgloss.Color("15")).Padding(0,2).Foreground(lipgloss.Color("0"))
-	activeCommentBoxStyle := lipgloss.NewStyle().BorderTop(true).BorderStyle(lipgloss.ThickBorder()).Background(lipgloss.Color("14")).Padding(0,2).Foreground(lipgloss.Color("0"))
-	sectionTitleStyle := lipgloss.NewStyle().Background(lipgloss.Color("14")).Padding(0,5,0,1).Foreground(lipgloss.Color("0"))
-	var commentBoxContent []string
-
-	headerStyle := lipgloss.NewStyle().BorderBottom(true).BorderStyle(lipgloss.ThickBorder()).Width(layout.GetWidthFraction(24))
-	headerContent := make([]string, 0)
-
-	commentBoxStyle := lipgloss.NewStyle().Width(layout.GetWidthFraction(24))
-
-
-	detailsBoxStyle := lipgloss.NewStyle().BorderTop(true).Width(layout.GetWidthFraction(24))
-	detailsFieldTitleStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Padding(0, 0, 0, 1).Width(layout.GetWidthFraction(3))
-	detailsFieldValueStyle := lipgloss.NewStyle().Padding(0, 0, 0, 1).Width(layout.GetWidthFraction(21))
-	detailsBoxContent := []string {
-		sectionTitleStyle.Render("Details"),
-		"",
-
+func (m IssueDetailViewModel) createViewTabs() []string {
+	var commentBoxTabs []string
+	tabs :=  []string{
+		fmt.Sprintf("Comments(%d)", len(m.issue.Fields.Comments.Comments)),
+		fmt.Sprintf("Subtasks(%d)", len(m.issue.Fields.Subtasks)),
+		fmt.Sprintf("Links(%d)", len(m.issue.Fields.IssueLinks)),
+		fmt.Sprintf("Child issues(%d)", len(m.issueChildIssues)),
 	}
 
-	if m.issue != nil {
-		headerContent = append(headerContent, lipgloss.NewStyle().Background(lipgloss.Color("55")).Padding(0,5,0,1).Margin(0, 5, 0, 0).Render(m.issue.Key))
-		headerContent = append(headerContent, m.issue.Fields.Summary)
-
-		tabs := []string{
-			fmt.Sprintf("Comments(%d)", len(m.issue.Fields.Comments.Comments)),
-			fmt.Sprintf("Subtasks(%d)", len(m.issue.Fields.Subtasks)),
-			fmt.Sprintf("Links(%d)", len(m.issue.Fields.IssueLinks)),
-			fmt.Sprintf("Child issues(%d)", len(m.issueChildIssues)),
+	for i, tab := range tabs {
+		if i == m.selectedTab {
+			commentBoxTabs = append(commentBoxTabs, layout.Style.ActiveCommentBoxStyle.Render(tab))
+		} else {
+			commentBoxTabs = append(commentBoxTabs, layout.Style.CommentBoxTabStyle.Render(tab))
 		}
+	}
+	return commentBoxTabs
+}
 
+func (m IssueDetailViewModel) createCommentBoxContent() []string {
+	var commentBoxContent []string
+	comments := m.issue.Fields.Comments.Comments
 
-		for i, tab := range tabs {
-			if i == m.selectedTab {
-				commentBoxTabs = append(commentBoxTabs, activeCommentBoxStyle.Render(tab))
-			} else {
-				commentBoxTabs = append(commentBoxTabs, commentBoxTabStyle.Render(tab))
-			}
+	for _, comment := range comments {
+		commentBoxContent = append(commentBoxContent, comment.Created +  " - " + comment.Author.DisplayName + ": " + comment.Body)
+	}
+	return commentBoxContent
+}
+
+func (m IssueDetailViewModel) createSubtaskBoxContent() []string {
+	var subTasks []string
+	subtasks := m.issue.Fields.Subtasks
+	subtaskStyle := lipgloss.NewStyle()
+	for _, subtask := range subtasks {
+		if subtask.Fields.Status.StatusCategory.Key == "done" {
+			subtaskStyle = subtaskStyle.Strikethrough(true)
+		}else{
+			subtaskStyle = subtaskStyle.Strikethrough(false)
+			subtaskStyle = subtaskStyle.Foreground(lipgloss.Color("15"))
 		}
+		subTasks = append(subTasks, subtaskStyle.Render(subtask.Key + ": " + subtask.Fields.Summary + " (" + subtask.Fields.Status.Name +")"))
+	}
+	return subTasks
+}
 
-		fields := DetailFields{
-			Type: m.issue.Fields.Type.Name,
-			Assignee: m.issue.Fields.Assignee.DisplayName,
-			Status: m.issue.Fields.Status.Name,
-			Priority: m.issue.Fields.Priority.Name,
-			Description: m.issue.Fields.Description,
-			Reporter: m.issue.Fields.Reporter.DisplayName,
+func (m IssueDetailViewModel) createChildIssueBoxContent() []string {
+	var childIssuesBoxContent []string
+	childIssues := m.issueChildIssues
+	childIssueStyle := lipgloss.NewStyle()
+	for _, childIssue := range childIssues {
+		if childIssue.Fields.Status.StatusCategory.Key == "done" {
+			childIssueStyle = childIssueStyle.Strikethrough(true)
+		}else{
+			childIssueStyle = childIssueStyle.Strikethrough(false)
+			childIssueStyle = childIssueStyle.Foreground(lipgloss.Color("15"))
 		}
-		if m.issueParent != nil {
-			fields.Parent = m.issueParent.Key + ": " + m.issueParent.Fields.Summary
-		}
+		childIssuesBoxContent = append(childIssuesBoxContent, childIssueStyle.Render(childIssue.Key + ": " + childIssue.Fields.Summary + " (" + childIssue.Fields.Status.Name +")"))
+	}
+return childIssuesBoxContent
+}
 
-		fieldValues := reflect.ValueOf(fields)
-		fieldType := reflect.TypeOf(fields)
-
-		for i := 0; i < fieldValues.NumField(); i++ {
-
-			detailsBoxContent = append(detailsBoxContent, lipgloss.JoinHorizontal(lipgloss.Left, detailsFieldTitleStyle.Render(fieldType.Field(i).Name + ": "), detailsFieldValueStyle.Render(fieldValues.Field(i).String())))
-		}
-
-		switch m.selectedTab {
-
-		case CommentTab:
-			comments := m.issue.Fields.Comments.Comments
-			for _, comment := range comments {
-				commentBoxContent = append(commentBoxContent, comment.Created +  " - " + comment.Author.DisplayName + ": " + comment.Body)
-			}
-
-		case SubtasksTab:
-			subtasks := m.issue.Fields.Subtasks
-			subtaskStyle := lipgloss.NewStyle()
-			for _, subtask := range subtasks {
-				if subtask.Fields.Status.StatusCategory.Key == "done" {
-					subtaskStyle = subtaskStyle.Strikethrough(true)
-				}else{
-					subtaskStyle = subtaskStyle.Strikethrough(false)
-					subtaskStyle = subtaskStyle.Foreground(lipgloss.Color("15"))
-				}
-				commentBoxContent = append(commentBoxContent, subtaskStyle.Render(subtask.Key + ": " + subtask.Fields.Summary + " (" + subtask.Fields.Status.Name +")"))
-			}
-		case ChildIssuesTab:
-			childIssues := m.issueChildIssues
-			childIssueStyle := lipgloss.NewStyle()
-			for _, childIssue := range childIssues {
-				if childIssue.Fields.Status.StatusCategory.Key == "done" {
-					childIssueStyle = childIssueStyle.Strikethrough(true)
-				}else{
-					childIssueStyle = childIssueStyle.Strikethrough(false)
-					childIssueStyle = childIssueStyle.Foreground(lipgloss.Color("15"))
-				}
-				commentBoxContent = append(commentBoxContent, childIssueStyle.Render(childIssue.Key + ": " + childIssue.Fields.Summary + " (" + childIssue.Fields.Status.Name +")"))
-			}
-
-
-		case LinksTab:
-			links := m.issue.Fields.IssueLinks
+func (m IssueDetailViewModel) createLinkBoxContent() []string {
+	var linkBoxContent []string
+	links := m.issue.Fields.IssueLinks
 			linkStyle := lipgloss.NewStyle()
 			for _, link := range links {
 				var message string
@@ -174,20 +139,70 @@ func (m IssueDetailViewModel) View() string {
 					message = linkStyle.Render("--> " + link.Type.Inward + " " +  link.InwardIssue.Key + " : " + link.InwardIssue.Fields.Summary + " (" + link.InwardIssue.Fields.Status.Name +")")
 
 				}
-				commentBoxContent = append(commentBoxContent, message)
+				linkBoxContent = append(linkBoxContent, message)
 			}
+			return linkBoxContent
+}
 
+func (m IssueDetailViewModel) View() string {
+
+	var commentBoxTabs []string
+	var commentBoxContent []string
+
+	headerStyle := lipgloss.NewStyle().BorderBottom(true).BorderStyle(lipgloss.ThickBorder()).Width(layout.GetWidthFraction(24))
+	headerContent := make([]string, 0)
+
+	commentBoxStyle := layout.Style.CommentBoxStyle
+
+	detailsBoxContent := []string {
+		layout.Style.SectionTitleStyle.Render("Details"),
+		"",
+
+	}
+
+	if m.issue != nil {
+		headerContent = append(headerContent, layout.Style.HeaderStyle.Render(m.issue.Key))
+		headerContent = append(headerContent, m.issue.Fields.Summary)
+
+		commentBoxTabs = m.createViewTabs()
+
+		fields := DetailFields{
+			Type: m.issue.Fields.Type.Name,
+			Assignee: m.issue.Fields.Assignee.DisplayName,
+			Status: m.issue.Fields.Status.Name,
+			Priority: m.issue.Fields.Priority.Name,
+			Description: m.issue.Fields.Description,
+			Reporter: m.issue.Fields.Reporter.DisplayName,
+		}
+		if m.issueParent != nil {
+			fields.Parent = m.issueParent.Key + ": " + m.issueParent.Fields.Summary
+		}
+		fieldValues := reflect.ValueOf(fields)
+		fieldType := reflect.TypeOf(fields)
+		for i := 0; i < fieldValues.NumField(); i++ {
+			detailsBoxContent = append(detailsBoxContent, lipgloss.JoinHorizontal(lipgloss.Left, layout.Style.DetailsFieldTitleStyle.Render(fieldType.Field(i).Name + ": "), layout.Style.DetailsFieldValueStyle.Render(fieldValues.Field(i).String())))
+		}
+
+		switch m.selectedTab {
+
+		case CommentTab:
+			commentBoxContent = m.createCommentBoxContent()
+		case SubtasksTab:
+			commentBoxContent = m.createSubtaskBoxContent()
+		case ChildIssuesTab:
+			commentBoxContent = m.createChildIssueBoxContent()
+		case LinksTab:
+			commentBoxContent = m.createLinkBoxContent()
 		}
 	}
+
 	help := customHelp.CreateDefaultHelp()
-
-
 
 	return lipgloss.JoinVertical(
 		lipgloss.Center,
 		headerStyle.Render(
 			lipgloss.JoinHorizontal(lipgloss.Left, headerContent...)),
-			lipgloss.JoinHorizontal(lipgloss.Left, detailsBoxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, detailsBoxContent...))),
+			lipgloss.JoinHorizontal(lipgloss.Left, layout.Style.DetailsBoxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, detailsBoxContent...))),
 			commentBoxStyle.Render(lipgloss.JoinHorizontal(lipgloss.Left, commentBoxTabs...)),
 			lipgloss.JoinHorizontal(lipgloss.Left, commentBoxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, commentBoxContent...))),
 			"\n",
