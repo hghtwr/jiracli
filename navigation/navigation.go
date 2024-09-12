@@ -25,6 +25,7 @@ type ScreenModel interface {
 	SetNavTo(ScreenId) ScreenModel
 	GetContext() Context
 	SetContext(Context) ScreenModel
+	GetBlockNavigation() bool
 }
 /*type ScreenModel struct {
 	ScreenUpdater

@@ -2,6 +2,7 @@ package jiraApi
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/andygrunwald/go-jira"
@@ -20,9 +21,18 @@ type IssueDetailResponse struct {
 type IssueParentResponse struct {
 	Issue *jira.Issue
 }
+
 type ChildIssuesResponse struct {
 	Issues []jira.Issue
 }
+
+type SearchAssigneesResponse struct {
+	Assignees []jira.User
+}
+
+const (
+	NoResponse = "No response returned"
+)
 
 var client, _ = CreateClient() // TODO: handle error
 
@@ -79,6 +89,7 @@ func FetchParentIssueDetails(issueId string) tea.Cmd {
 		}
 	}
 }
+
 func FetchIssueDetails(issueId string) tea.Cmd {
 	return func() tea.Msg {
 
@@ -131,4 +142,28 @@ func CreateClient() (*jira.Client, error) {
 		return nil, clientErr
 	}
 	return jiraClient, nil
+}
+
+
+func SearchAssignees(username string) tea.Cmd {
+
+	return func() tea.Msg {
+
+		encodedUsername := url.QueryEscape(username)
+		users, _, respError := client.User.Find(encodedUsername)
+
+		if respError != nil {
+			if respError.Error() != NoResponse {
+
+				return notifications.NotificationCmd{
+					Message: fmt.Sprintf("%s - %s", "Error fetching issue details", respError.Error()),
+					Type: notifications.Error,
+					Mode: notifications.Tray,
+				}
+			}
+		}
+		return SearchAssigneesResponse{
+			Assignees: users,
+		}
+	}
 }

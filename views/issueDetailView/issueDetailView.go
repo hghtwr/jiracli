@@ -23,6 +23,7 @@ type IssueDetailViewModel struct {
 	issue 		*jira.Issue
 	issueChildIssues []jira.Issue
 	selectedTab int
+	blockNavigation bool
 }
 
 const (
@@ -273,6 +274,15 @@ func (m IssueDetailViewModel) GetContext() navigation.Context {
 }
 func (m IssueDetailViewModel) SetContext(context navigation.Context) navigation.ScreenModel {
 	m.Context = context
+	return m
+}
+
+func (m IssueDetailViewModel) GetBlockNavigation() bool {
+	return m.blockNavigation
+}
+
+func (m IssueDetailViewModel) SetBlockNavigation(blockNavigation bool) navigation.ScreenModel {
+	m.blockNavigation = blockNavigation
 	return m
 }
 

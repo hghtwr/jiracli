@@ -47,25 +47,25 @@ func initialModel() MainModel {
 
 func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmdBatch []tea.Cmd
-
+	blockNavigation := m.models[m.activeView].GetBlockNavigation()
 	switch msg := msg.(type) {
 	case notifications.NotificationCmd:
 		m.handleNotifications(msg)
 		return m, nil
 	case tea.KeyMsg:
-		//Press any key to clear the notification
 		switch msg.String() {
+
 		case "0":
-			if m.activeView != navigation.SettingsView {
+			if m.activeView != navigation.SettingsView && !blockNavigation {
 				m.history = append(m.history, m.activeView)
 			}
 			m.activeView = navigation.SettingsView
 		case "1":
-			if m.activeView != navigation.AssignedIssueView {
+			if m.activeView != navigation.AssignedIssueView && !blockNavigation{
 				m.history = append(m.history, m.activeView)
 			}
 			m.activeView = navigation.AssignedIssueView
-		case "b", "esc":
+		case "esc":
 			if len(m.history) > 0 {
 				m.models[m.activeView] = m.models[m.activeView].SetNavTo(m.activeView) // Reset the navigation in the current view
 				m.activeView = m.history[len(m.history)-1]
@@ -80,8 +80,8 @@ func (m MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmdBatch = append(cmdBatch, cmd)
 	m.models[m.activeView] = model
 
-	// In case navigation is triggered by subview
-	if m.activeView != m.models[m.activeView].GetNavTo() {
+	// In case navigation is triggered by subview. We need to reevaluate the blocked State in case it changed
+	if m.activeView != m.models[m.activeView].GetNavTo() && !m.models[m.activeView].GetBlockNavigation(){
 		m.history = append(m.history, m.activeView)
 		navTo := m.models[m.activeView].GetNavTo()
 		context := m.models[m.activeView].GetContext()

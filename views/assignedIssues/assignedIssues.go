@@ -17,6 +17,7 @@ type AssignedIssuesModel struct {
 	issueTable table.Model
 	NavTo 		navigation.ScreenId
 	Context 	navigation.Context
+	blockNavigation bool
 }
 
 
@@ -24,7 +25,7 @@ func CreateInitModel() AssignedIssuesModel{
 	return AssignedIssuesModel{
 		issueTable: createTable(),
 		NavTo: navigation.AssignedIssueView,
-
+		blockNavigation: false,
 	}
 }
 
@@ -93,6 +94,14 @@ func (m AssignedIssuesModel) SetNavTo(navTo navigation.ScreenId) navigation.Scre
 
 func (m AssignedIssuesModel) SetContext(context navigation.Context) navigation.ScreenModel {
 	m.Context = context
+	return m
+}
+
+func (m AssignedIssuesModel) GetBlockNavigation() bool {
+	return m.blockNavigation
+}
+func (m AssignedIssuesModel) SetBlockNavigation(blockNavigation bool) navigation.ScreenModel {
+	m.blockNavigation = blockNavigation
 	return m
 }
 
